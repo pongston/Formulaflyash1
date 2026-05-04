@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>จัดการข้อมูลหน่วยผลิตโคราช</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+
+<div class="container mt-4">
+<div class="d-flex justify-content-between">
+<h3>จัดการข้อมูลหน่วยผลิตโคราช</h3>
+<a href="/" class="btn btn-danger">Logout</a>
+</div>
+
+<input type="text" id="search" class="form-control mt-3" placeholder="ค้นหา...">
+
+<div class="card p-3 mt-3">
+<form method="POST" action="/add" class="row g-2">
+<div class="col-md-4">
+<input name="customer" class="form-control" placeholder="Customer" required>
+</div>
+<div class="col-md-4">
+<input name="site_code" class="form-control" placeholder="Site Code" required>
+</div>
+<div class="col-md-4">
+<input name="unit_name" class="form-control" placeholder="หน่วยงาน" required>
+</div>
+<div class="col-md-12">
+<button class="btn btn-success">บันทึก</button>
+</div>
+</form>
+</div>
+
+<table class="table table-bordered mt-3">
+<thead class="table-dark">
+<tr>
+<th>Customer</th>
+<th>Site Code</th>
+<th>หน่วยงาน</th>
+<th>จัดการ</th>
+</tr>
+</thead>
+<tbody id="tableBody"></tbody>
+</table>
+</div>
+
+<script>
+let fullData=[];
+
+function loadData(){
+    fetch('/data')
+    .then(res => {
+        if(!res.ok) throw new Error("โหลดข้อมูลไม่สำเร็จ");
+        return res.json();
+    })
+    .then(data => {
+        fullData = data;
+        renderTable(data);
+    })
+    .catch(err => alert(err.message)); // แจ้งเตือนถ้า Server มีปัญหา
+}
+
+
+function renderTable(data){
+let html='';
+data.forEach((item,index)=>{
+html+=`
+<tr>
+<td>${item.customer}</td>
+<td>${item.site_code}</td>
+<td>${item.unit_name}</td>
+<td>
+<button class="btn btn-warning btn-sm" onclick="editRow(${index})">แก้ไข</button>
+<button class="btn btn-danger btn-sm" onclick="deleteRow(${index})">ลบ</button>
+</td>
+</tr>`;
+});
+document.getElementById('tableBody').innerHTML=html;
+}
+
+function deleteRow(index){
+if(confirm("คุณต้องการลบจริงไหม?")){
+window.location='/delete/'+index;
+}
+}
+
+function editRow(index){
+let item=fullData[index];
+let customer=prompt("Customer",item.customer);
+let site=prompt("Site Code",item.site_code);
+let unit=prompt("หน่วยงาน",item.unit_name);
+if(customer&&site&&unit){
+let form=document.createElement('form');
+form.method='POST';
+form.action='/edit';
+form.innerHTML=`
+<input name="index" value="${index}">
+<input name="customer" value="${customer}">
+<input name="site_code" value="${site}">
+<input name="unit_name" value="${unit}">
+`;
+document.body.appendChild(form);
+form.submit();
+}
+}
+
+document.getElementById('search').addEventListener('keyup',function(){
+let keyword=this.value.toLowerCase();
+let filtered=fullData.filter(item=>
+item.customer.toLowerCase().includes(keyword) ||
+item.site_code.toLowerCase().includes(keyword) ||
+item.unit_name.toLowerCase().includes(keyword)
+);
+renderTable(filtered);
+});
+
+loadData();
+</script>
+
+</body>
+</html>
